@@ -1,0 +1,11 @@
+/artifacts/
+*.exe
+*.zip
+*.pdb
+*.log
+*-status.json
+device-check.txt
+test-results.txt
+.vs/
+bin/
+obj/
