@@ -46,7 +46,16 @@ namespace MagicTrackpadBattery
                 policy.Warned = true;
                 Require(!policy.Observe(new Reading { Percent = 9 }), "persisted latch suppresses restart duplicate");
                 Require(Marshal.SizeOf(typeof(IntPtr)) == 8, "x64 build");
-                File.WriteAllText(output, "PASS: battery report validation, threshold, charge, disconnect, recovery and restart deduplication.", Encoding.UTF8);
+                string pathWithSpaces = @"C:\Program Files\Magic Trackpad\MagicTrackpadBattery.exe";
+                Require(StartupRegistration.BuildCommand(pathWithSpaces) == "\"" + pathWithSpaces + "\"", "quote startup path with spaces");
+                Require(StartupRegistration.MatchesCommand("\"" + pathWithSpaces.ToLowerInvariant() + "\"", pathWithSpaces), "startup path case-insensitive match");
+                Require(!StartupRegistration.MatchesCommand(null, pathWithSpaces), "missing startup registration");
+                Require(!StartupRegistration.MatchesCommand("\"C:\\Old\\MagicTrackpadBattery.exe\"", pathWithSpaces), "stale location does not match");
+                bool rejectedRelativePath = false;
+                try { StartupRegistration.BuildCommand("MagicTrackpadBattery.exe"); }
+                catch (ArgumentException) { rejectedRelativePath = true; }
+                Require(rejectedRelativePath, "reject relative startup path");
+                File.WriteAllText(output, "PASS: battery reports, low-battery policy, restart deduplication and startup command validation.", Encoding.UTF8);
                 return 0;
             }
             catch (Exception error) { File.WriteAllText(output, error.ToString(), Encoding.UTF8); return 1; }

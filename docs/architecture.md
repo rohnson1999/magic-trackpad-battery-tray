@@ -24,6 +24,7 @@ The reader calls `HidD_GetInputReport` with report ID `0x90`, using the HID coll
 | `src/TrayArt.cs` | Icon drawing and native icon cleanup |
 | `src/BatteryTray.cs` | Polling, tooltips, menu and notifications |
 | `src/Program.cs` | Entry point, single instance and diagnostic commands |
+| `src/StartupRegistration.cs` | Per-user login startup registration and quoted path handling |
 | `tests/LogicTests.cs` | Hardware-independent tests |
 | `scripts/` | Build, test and release packaging |
 
@@ -43,6 +44,17 @@ These are explicit command-line options; normal double-click startup produces no
 ```
 
 The single-instance guard also applies to diagnostic tray startup. Exit an existing tray instance first when checking a new build. No device addresses or device paths are written to the diagnostic result.
+
+## Startup
+
+The tray menu's "开机自启动" checkbox adds or removes the `MagicTrackpadBattery` string under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. It stores the quoted absolute EXE location, without diagnostic arguments. Windows launches it when the current user signs in. Other users and system-wide startup settings are not changed.
+
+The setting is re-read when the menu opens. Moving the executable requires enabling startup from its new location. Exiting the tray does not disable startup. Headless deployment commands return exit code 0 on success:
+
+```powershell
+.\MagicTrackpadBattery.exe --autostart enable
+.\MagicTrackpadBattery.exe --autostart disable
+```
 
 ## Development reference
 

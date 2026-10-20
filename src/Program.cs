@@ -18,6 +18,15 @@ namespace MagicTrackpadBattery
         [STAThread]
         private static int Main(string[] args)
         {
+            if (args.Length == 2 && args[0] == "--autostart")
+            {
+                if (args[1] != "enable" && args[1] != "disable") return 2;
+                try {
+                    StartupRegistration.SetEnabled(Application.ExecutablePath, args[1] == "enable");
+                    return 0;
+                }
+                catch (Exception) { return 1; }
+            }
             if (args.Length == 2 && args[0] == "--read-once")
             {
                 Reading reading = HidBattery.Read();

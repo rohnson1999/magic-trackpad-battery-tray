@@ -20,6 +20,7 @@ namespace MagicTrackpadBattery
         private readonly ToolStripMenuItem batteryItem = new ToolStripMenuItem("正在读取电量…");
         private readonly ToolStripMenuItem timeItem = new ToolStripMenuItem("每 60 秒自动刷新");
         private readonly ToolStripMenuItem refreshItem = new ToolStripMenuItem("立即刷新");
+        private readonly ToolStripMenuItem startupItem = new ToolStripMenuItem("开机自启动");
         private readonly Control dispatcher = new Control();
         private readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         private readonly LowBatteryPolicy alerts = new LowBatteryPolicy();
@@ -48,8 +49,12 @@ namespace MagicTrackpadBattery
             menu.Items.Add(timeItem);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(refreshItem);
+            menu.Items.Add(startupItem);
             menu.Items.Add("退出", null, delegate { ExitThread(); });
             refreshItem.Click += delegate { Refresh(); };
+            startupItem.Click += delegate { ToggleStartup(); };
+            menu.Opening += delegate { UpdateStartupMenu(); };
+            UpdateStartupMenu();
             tray.ContextMenuStrip = menu;
             tray.Text = "Magic Trackpad：正在读取电量";
             SetIcon(null, false);
@@ -66,6 +71,33 @@ namespace MagicTrackpadBattery
             };
             timer.Start();
             Refresh();
+        }
+
+        private void UpdateStartupMenu()
+        {
+            try {
+                startupItem.Checked = StartupRegistration.IsEnabled(Application.ExecutablePath);
+                startupItem.Enabled = true;
+                startupItem.ToolTipText = "当前用户登录 Windows 后自动启动";
+            }
+            catch (Exception error) {
+                startupItem.Enabled = false;
+                startupItem.ToolTipText = "无法读取自启动设置：" + error.Message;
+            }
+        }
+
+        private void ToggleStartup()
+        {
+            try {
+                bool enabled = StartupRegistration.IsEnabled(Application.ExecutablePath);
+                StartupRegistration.SetEnabled(Application.ExecutablePath, !enabled);
+                UpdateStartupMenu();
+            }
+            catch (Exception error) {
+                UpdateStartupMenu();
+                MessageBox.Show("无法更改自启动设置：" + error.Message, "Magic Trackpad 电量",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void SetIcon(int? percent, bool charging)

@@ -8,6 +8,7 @@ A small Windows tray application that shows the battery percentage of a Lightnin
 
 - Battery percentage on the tray icon; hover for the percentage and charging state.
 - Refreshes every 60 seconds. Left-click for an immediate refresh; right-click to see status or exit.
+- Optional per-user launch at Windows sign-in via the "开机自启动" tray menu toggle. No administrator privileges required.
 - Warns at 9% or below while not charging. One warning per low-battery episode, persisted across application restarts.
 - Charging or recovery to 10% or above resets the warning. Disconnection does not reset it.
 - Shows a gray `?` when the reading is unavailable rather than treating a read failure as 0%.
@@ -15,9 +16,9 @@ A small Windows tray application that shows the battery percentage of a Lightnin
 
 ## Download
 
-Download `MagicTrackpadBattery-v1.0.0-windows-x64.zip` from [Releases](https://github.com/rohnson1999/magic-trackpad-battery-tray/releases), extract it, and run `MagicTrackpadBattery.exe`. If hidden, move the numbered icon out of the tray overflow area.
+Download the latest `windows-x64.zip` from [Releases](https://github.com/rohnson1999/magic-trackpad-battery-tray/releases), extract it, and run `MagicTrackpadBattery.exe`. If hidden, move the numbered icon out of the tray overflow area.
 
-The application does not enable automatic startup. Windows notification settings and Do Not Disturb can suppress alerts.
+Keep the EXE in a permanent folder before enabling startup. If you move it, enable startup again from the new location to update the path. Exiting stops the current instance; unchecking the startup menu item disables future launch at sign-in. Windows notification settings and Do Not Disturb can suppress alerts.
 
 ## Compatibility
 
@@ -40,14 +41,14 @@ Build outputs, the portable ZIP, and SHA-256 checksums are placed in `artifacts/
 
 ## State and removal
 
-The only normal persistent state is `%LOCALAPPDATA%\MagicTrackpadBattery\low-battery-alert.txt`, which prevents repeated warnings. Exit through the tray menu and delete the executable to uninstall. The state directory can also be removed.
+The alert state is `%LOCALAPPDATA%\MagicTrackpadBattery\low-battery-alert.txt`. Enabling startup also writes the `MagicTrackpadBattery` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`; disabling it removes that value. Disable startup, exit through the tray menu, and delete the executable to uninstall. The state directory can also be removed.
 
 ## Limitations
 
 - One matching device is monitored. Multiple connected trackpads are not individually tracked.
 - Low-battery policy is tested; actual low-battery notification delivery has not yet been tested with a device below 10%.
 - A stalled HID query shows a timeout while keeping the UI responsive. Reconnect the device or restart the application if it does not recover.
-- Tray hover and context-menu interaction have not yet been verified through UI automation.
+- The user has manually verified tray operation and normal runtime. Startup registration is verified by reading it back; a full Windows restart has not been performed.
 - Release binaries are not Authenticode signed.
 
 See [architecture and diagnostics](docs/architecture.md) and [validation](docs/validation.md).

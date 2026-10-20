@@ -8,6 +8,7 @@
 
 - 托盘图标直接显示电量数字，悬停查看电量和充电状态。
 - 每 60 秒自动刷新；左键单击立即刷新。
+- 右键菜单可勾选“开机自启动”，在当前用户登录 Windows 后自动运行，无需管理员权限。
 - 电量低于 **10%**（9% 及以下）且未充电时弹出系统提醒。
 - 同一段低电量期间只提醒一次，重启程序也会保留提醒状态；充电或恢复至至少 10% 后重置。
 - 未连接、休眠或读取失败时显示灰色 `?`，不会把失败显示成 0%。
@@ -15,12 +16,14 @@
 
 ## 下载与使用
 
-1. 在 [Releases](https://github.com/rohnson1999/magic-trackpad-battery-tray/releases) 下载 `MagicTrackpadBattery-v1.0.0-windows-x64.zip`。
+1. 在 [Releases](https://github.com/rohnson1999/magic-trackpad-battery-tray/releases) 下载最新版 `windows-x64.zip`。
 2. 解压并双击 `MagicTrackpadBattery.exe`。
 3. 在右下角系统托盘找到电量数字图标；如被折叠，可从隐藏图标区域将其拖出来。
 4. 悬停查看电量；右键菜单可刷新、查看最后更新时间或退出。
 
-程序不自动添加开机启动项。Windows 通知设置或勿扰模式可能抑制提醒。
+建议将解压后的程序放在固定目录，例如“文档”中的 `MagicTrackpadBattery` 文件夹，再勾选“开机自启动”。移动程序后，请在新位置重新勾选该选项，以更新自启动路径。退出菜单仅结束本次运行，不会取消下次登录自启动；取消勾选才会关闭自启动。
+
+Windows 通知设置或勿扰模式可能抑制提醒。
 
 ## 兼容性
 
@@ -59,20 +62,22 @@ New-Item -ItemType Directory -Path artifacts -Force
 
 ## 隐私与移除
 
-程序不联网。正常运行仅在以下位置保存一个提醒状态文件：
+程序不联网。正常运行在以下位置保存一个提醒状态文件：
 
 ```text
 %LOCALAPPDATA%\MagicTrackpadBattery\low-battery-alert.txt
 ```
 
-右键退出后删除 EXE 即可移除，也可删除上述状态目录。可选诊断参数见 [实现说明](docs/architecture.md)。
+启用自启动后，还会写入当前用户的 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`，值名为 `MagicTrackpadBattery`。取消勾选“开机自启动”即可移除该项。
+
+卸载时先取消自启动，再右键退出并删除 EXE，也可删除上述状态目录。可选诊断参数见 [实现说明](docs/architecture.md)。
 
 ## 已知限制
 
 - 当前版本仅处理一台匹配的 Lightning Magic Trackpad；多台同时连接时采用首个成功读取的接口。
 - 通知规则已通过自动测试；首版发布时尚未以设备真实低于 10% 的状态验证 Windows 通知送达。
 - 若 HID 查询长时间不返回，托盘会显示超时并保持界面响应；不会并发堆积查询。此时可重新连接设备，或退出后重开程序。
-- 实际托盘悬停提示与菜单尚未通过界面自动化验证。
+- 用户已手动确认托盘操作和正常运行无误；新增自启动通过注册表读回校验，尚未通过重启 Windows 验证。
 - Release EXE 没有商业代码签名证书。
 
 ## 致谢与许可证
