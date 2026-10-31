@@ -24,7 +24,8 @@ The reader calls `HidD_GetInputReport` with report ID `0x90`, using the HID coll
 | `src/TrayArt.cs` | Icon drawing and native icon cleanup |
 | `src/BatteryTray.cs` | Polling, tooltips, menu and notifications |
 | `src/Program.cs` | Entry point, single instance and diagnostic commands |
-| `src/StartupRegistration.cs` | Per-user login startup registration and quoted path handling |
+| `src/StartupRegistration.cs` | Interactive logon task, validation and legacy migration |
+| `src/StartupLog.cs` | Bounded local startup and error log |
 | `tests/LogicTests.cs` | Hardware-independent tests |
 | `scripts/` | Build, test and release packaging |
 
@@ -47,14 +48,16 @@ The single-instance guard also applies to diagnostic tray startup. Exit an exist
 
 ## Startup
 
-The tray menu's "开机自启动" checkbox adds or removes the `MagicTrackpadBattery` string under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. It stores the quoted absolute EXE location, without diagnostic arguments. Windows launches it when the current user signs in. Other users and system-wide startup settings are not changed.
+The tray menu's "开机自启动" checkbox adds or removes the `MagicTrackpadBattery` scheduled task through Windows Task Scheduler COM. Its logon trigger targets the current user's SID and delays execution 15 seconds. The action uses the absolute EXE path, `--startup`, and the install directory as its working directory. It uses `InteractiveToken` and `LeastPrivilege`, stores no password, permits battery operation and has no execution time limit. Nonzero startup failure can retry three times at one-minute intervals. Normal user exit returns success and is not automatically restarted.
 
-The setting is re-read when the menu opens. Moving the executable requires enabling startup from its new location. Exiting the tray does not disable startup. Headless deployment commands return exit code 0 on success:
+The setting is re-read when the menu opens. Validation accepts either SID or the account name Windows normalizes into the saved trigger. Moving the executable requires enabling startup from its new location. Exiting the tray does not disable startup. Legacy Run registration is migrated on normal launch and removed only after the replacement task has been verified. Headless deployment commands return exit code 0 on success:
 
 ```powershell
 .\MagicTrackpadBattery.exe --autostart enable
 .\MagicTrackpadBattery.exe --autostart disable
 ```
+
+`startup.log` records manual/task launch, successful tray initialization and errors under the local application-data directory. It rotates after approximately 64 KiB, retaining one previous log. Scheduled startup reports an initialization error with a nonzero exit instead of a blocking message box so Task Scheduler can retry. Logs stay local.
 
 ## Development reference
 

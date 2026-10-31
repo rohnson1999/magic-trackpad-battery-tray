@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-10-31
+
+- Replace registry Run startup with a per-user interactive logon task delayed by 15 seconds.
+- Permit battery operation and unlimited runtime, with up to three one-minute failure retries.
+- Migrate legacy Run registration only after the replacement task has been verified.
+- Add bounded local startup/error logs and suppress blocking error dialogs during scheduled startup.
+- Validate Windows-normalized task account names as well as SID-form trigger users.
+
 ## 1.1.0 — 2026-10-20
 
 - Add a per-user "开机自启动" tray menu toggle, with no administrator privileges required.

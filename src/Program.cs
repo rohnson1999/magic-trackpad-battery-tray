@@ -25,7 +25,7 @@ namespace MagicTrackpadBattery
                     StartupRegistration.SetEnabled(Application.ExecutablePath, args[1] == "enable");
                     return 0;
                 }
-                catch (Exception) { return 1; }
+                catch (Exception error) { StartupLog.Write("Startup registration error: " + error); return 1; }
             }
             if (args.Length == 2 && args[0] == "--read-once")
             {
@@ -40,14 +40,28 @@ namespace MagicTrackpadBattery
                 return 0;
             }
             bool first;
+            bool fromStartup = args.Length == 1 && args[0] == "--startup";
+            StartupLog.Write("Process started (" + (fromStartup ? "login task" : "manual") + "), v" + Application.ProductVersion + ".");
             using (Mutex mutex = new Mutex(true, @"Local\MagicTrackpadBattery.Tray.v1", out first))
             {
-                if (!first) return 0;
+                if (!first) { StartupLog.Write("Existing instance detected; duplicate exited."); return 0; }
                 Application.EnableVisualStyles();
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
                 Application.SetCompatibleTextRenderingDefault(false);
                 string status = args.Length == 2 && args[0] == "--status-file" ? args[1] : null;
-                try { Application.Run(new BatteryTray(status)); }
-                catch (Exception error) { MessageBox.Show(error.Message, "Magic Trackpad 电量", MessageBoxButtons.OK, MessageBoxIcon.Error); return 1; }
+                try {
+                    try { StartupRegistration.MigrateLegacy(Application.ExecutablePath); }
+                    catch (Exception error) { StartupLog.Write("Legacy startup migration error: " + error); }
+                    BatteryTray context = new BatteryTray(status);
+                    StartupLog.Write("Tray initialized successfully.");
+                    Application.Run(context);
+                    StartupLog.Write("Application exited normally.");
+                }
+                catch (Exception error) {
+                    StartupLog.Write("Application error: " + error);
+                    if (!fromStartup) MessageBox.Show(error.Message, "Magic Trackpad 电量", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return 1;
+                }
                 finally { mutex.ReleaseMutex(); }
             }
             return 0;

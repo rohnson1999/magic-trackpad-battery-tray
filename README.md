@@ -8,7 +8,7 @@
 
 - 托盘图标直接显示电量数字，悬停查看电量和充电状态。
 - 每 60 秒自动刷新；左键单击立即刷新。
-- 右键菜单可勾选“开机自启动”，在当前用户登录 Windows 后自动运行，无需管理员权限。
+- 右键菜单可勾选“开机自启动”，通过当前用户的计划任务在登录 Windows 约 15 秒后运行，无需管理员权限。
 - 电量低于 **10%**（9% 及以下）且未充电时弹出系统提醒。
 - 同一段低电量期间只提醒一次，重启程序也会保留提醒状态；充电或恢复至至少 10% 后重置。
 - 未连接、休眠或读取失败时显示灰色 `?`，不会把失败显示成 0%。
@@ -55,20 +55,22 @@ Windows 通知设置或勿扰模式可能抑制提醒。
 
 ```powershell
 New-Item -ItemType Directory -Path artifacts -Force
-& "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /optimize+ /codepage:65001 /r:System.Windows.Forms.dll /r:System.Drawing.dll /out:artifacts\MagicTrackpadBattery.exe src\*.cs
+& "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /optimize+ /codepage:65001 /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:Microsoft.CSharp.dll /r:System.Xml.dll /out:artifacts\MagicTrackpadBattery.exe src\*.cs
 ```
 
 源码按设备读取、报告解析、提醒策略、图标绘制和托盘界面拆分。测试覆盖报告校验、10% 边界、重复提醒、充电、断连、恢复和重启抑制。
 
 ## 隐私与移除
 
-程序不联网。正常运行在以下位置保存一个提醒状态文件：
+程序不联网。正常运行在以下位置保存提醒状态，启动日志也位于同一目录：
 
 ```text
 %LOCALAPPDATA%\MagicTrackpadBattery\low-battery-alert.txt
 ```
 
-启用自启动后，还会写入当前用户的 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`，值名为 `MagicTrackpadBattery`。取消勾选“开机自启动”即可移除该项。
+`startup.log` 记录程序是否被启动及初始化错误，超过约 64 KiB 时轮换为 `startup.previous.log`。
+
+启用自启动后，会创建名为 `MagicTrackpadBattery` 的当前用户登录计划任务，不保存密码、不请求管理员权限，也不要求连接电源。取消勾选“开机自启动”即可删除该任务。旧版注册表启动项会在新任务验证成功后移除。
 
 卸载时先取消自启动，再右键退出并删除 EXE，也可删除上述状态目录。可选诊断参数见 [实现说明](docs/architecture.md)。
 
@@ -77,7 +79,7 @@ New-Item -ItemType Directory -Path artifacts -Force
 - 当前版本仅处理一台匹配的 Lightning Magic Trackpad；多台同时连接时采用首个成功读取的接口。
 - 通知规则已通过自动测试；首版发布时尚未以设备真实低于 10% 的状态验证 Windows 通知送达。
 - 若 HID 查询长时间不返回，托盘会显示超时并保持界面响应；不会并发堆积查询。此时可重新连接设备，或退出后重开程序。
-- 用户已手动确认托盘操作和正常运行无误；新增自启动通过注册表读回校验，尚未通过重启 Windows 验证。
+- 用户已手动确认托盘操作和正常运行无误；新版计划任务已在实机执行并成功启动托盘，尚未通过重启 Windows 验证登录触发。
 - Release EXE 没有商业代码签名证书。
 
 ## 致谢与许可证

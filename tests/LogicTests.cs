@@ -55,6 +55,18 @@ namespace MagicTrackpadBattery
                 try { StartupRegistration.BuildCommand("MagicTrackpadBattery.exe"); }
                 catch (ArgumentException) { rejectedRelativePath = true; }
                 Require(rejectedRelativePath, "reject relative startup path");
+                string sid = "S-1-5-21-111-222-333-1001";
+                string taskXml = StartupRegistration.BuildTaskXml(pathWithSpaces, sid);
+                Require(StartupRegistration.MatchesTaskXml(taskXml, pathWithSpaces, sid), "scheduled task round trip");
+                Require(!StartupRegistration.MatchesTaskXml(taskXml, pathWithSpaces, sid + "0"), "task belongs to current user");
+                Require(!StartupRegistration.MatchesTaskXml(taskXml.Replace("<Enabled>true</Enabled>", "<Enabled>false</Enabled>"), pathWithSpaces, sid), "disabled login trigger rejected");
+                string escapedPath = @"C:\Apps\Battery & Tools\MagicTrackpadBattery.exe";
+                Require(StartupRegistration.MatchesTaskXml(StartupRegistration.BuildTaskXml(escapedPath, sid), escapedPath, sid), "task XML escapes special characters");
+                Require(taskXml.Contains("PT15S") && taskXml.Contains("InteractiveToken") && taskXml.Contains("LeastPrivilege"), "interactive unelevated delayed startup");
+                Require(taskXml.Contains("<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>") && taskXml.Contains("<DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>"), "task can run continuously on battery");
+                System.Security.Principal.WindowsIdentity identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                string normalizedXml = StartupRegistration.BuildTaskXml(pathWithSpaces, identity.User.Value).Replace(identity.User.Value, identity.Name);
+                Require(StartupRegistration.MatchesTaskXml(normalizedXml, pathWithSpaces, identity.User.Value), "Windows-normalized account name maps back to SID");
                 File.WriteAllText(output, "PASS: battery reports, low-battery policy, restart deduplication and startup command validation.", Encoding.UTF8);
                 return 0;
             }

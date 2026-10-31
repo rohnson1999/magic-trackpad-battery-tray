@@ -8,7 +8,7 @@ A small Windows tray application that shows the battery percentage of a Lightnin
 
 - Battery percentage on the tray icon; hover for the percentage and charging state.
 - Refreshes every 60 seconds. Left-click for an immediate refresh; right-click to see status or exit.
-- Optional per-user launch at Windows sign-in via the "开机自启动" tray menu toggle. No administrator privileges required.
+- Optional per-user launch approximately 15 seconds after Windows sign-in through a scheduled task. Toggle it using "开机自启动" in the tray menu; no administrator privileges required.
 - Warns at 9% or below while not charging. One warning per low-battery episode, persisted across application restarts.
 - Charging or recovery to 10% or above resets the warning. Disconnection does not reset it.
 - Shows a gray `?` when the reading is unavailable rather than treating a read failure as 0%.
@@ -41,14 +41,14 @@ Build outputs, the portable ZIP, and SHA-256 checksums are placed in `artifacts/
 
 ## State and removal
 
-The alert state is `%LOCALAPPDATA%\MagicTrackpadBattery\low-battery-alert.txt`. Enabling startup also writes the `MagicTrackpadBattery` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`; disabling it removes that value. Disable startup, exit through the tray menu, and delete the executable to uninstall. The state directory can also be removed.
+The alert state and bounded startup logs are stored under `%LOCALAPPDATA%\MagicTrackpadBattery\`. Enabling startup registers the per-user `MagicTrackpadBattery` logon task with a 15-second delay, interactive/non-elevated execution, battery operation enabled, and up to three one-minute failure retries. No password is stored. A verified replacement removes the legacy Run value. Disable startup, exit through the tray menu, and delete the executable to uninstall. The state/log directory can also be removed.
 
 ## Limitations
 
 - One matching device is monitored. Multiple connected trackpads are not individually tracked.
 - Low-battery policy is tested; actual low-battery notification delivery has not yet been tested with a device below 10%.
 - A stalled HID query shows a timeout while keeping the UI responsive. Reconnect the device or restart the application if it does not recover.
-- The user has manually verified tray operation and normal runtime. Startup registration is verified by reading it back; a full Windows restart has not been performed.
+- The user has manually verified tray operation and normal runtime. The new scheduled task has actually launched the installed tray, with successful initialization recorded in its log. Logon triggering after a full Windows restart has not yet been verified.
 - Release binaries are not Authenticode signed.
 
 See [architecture and diagnostics](docs/architecture.md) and [validation](docs/validation.md).
